@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.1/axios.min.js"></script>
+</head>
+<body>
+    <style>
+    html, body { margin:0px;padding:0px;box-sizing: border-box;}
+    .searchbar input[type=text] { margin:5px;padding:10px;outline:none;width:60%;height:50px;border-radius:20px;font-size:40px;border:1px solid gray}
+    .searchbar button { outline:none;height:50px;border-radius:20px;font-size:40px;}
+    .questionlisttitle {  margin-left:20px;font-size:40px}
+    .questionlist { position:relative;display: flex;flex-flow: column; }
+    .question {  margin-left:50px;font-size:30px;padding:10px 0px;}
+    </style>
+    <div id="app"></div>
+    
+    <script type="text/babel">
+        class SearchBar extends React.Component {
+            state = {checked:false, filter:this.props.filter}
+            log = () => { console.log("youve clicked me"); event.preventDefault();}
+            render = () => (<div className="searchbar">
+                    <input type="text" onChange={() => {this.setState({filter:event.target.value});}} />
+                 
+                    <a href="#" onClick={this.log}>klik mij om iets te loggen</a>
+                    <button onClick={() => {this.props.onFilter(this.state.filter)}}>Go</button>
+                </div>)
+        }
+        let AddQuestion = (props) => {
+            return (
+                <form onSubmit={()=>{props.onNew(event.target.q.value);event.preventDefault();}}>
+                    <dl>
+                        <dt>your question</dt>
+                        <dd><input type="text" name="q" placeholder="your question here" required/></dd>
+                    </dl>
+                    <input type="submit" />
+                </form>
+            ) 
+        }
+        let QuestionList = (props) => {
+            let list = [];
+            props.questions.forEach(q => { if (props.filter == '' || q.question.indexOf(props.filter) != -1) list.push(q);});
+            return <div className="questionlist"><div className="questionlisttitle">Questions</div>{list.map(q => <div>{q.q}</div>)}</div> 
+        }   
+
+        class App extends React.Component {
+            constructor(){ super();  this.state = { questions:[], filter:''} }
+            componentDidMount() {  axios.get("http://localhost:3050/questions").then(q => { console.log("q", q.data); this.setState({questions:q.data})});}
+            filter = (filterstring) => { this.setState({filter:filterstring}); }
+            addQuestion = (question) => { 
+                axios.post("http://localhost:3050/questions", {q:question, type:'number'}).then(q => {this.setState({questions:Object.values(q.data)})});
+            }
+            render(){
+                return (<div>
+                        <SearchBar onFilter={this.filter}/>
+                        <QuestionList questions={this.state.questions} filter={this.state.filter} />
+                        <AddQuestion onNew={this.addQuestion} />
+                    </div>)
+            }
+        }
+
+        ReactDOM.render(<App/>, document.querySelector("#app"));
+    </script>
+  
+
+    
+</body>
+</html>

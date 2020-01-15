@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <div id="div1">
+        <div id="div2">
+            <div id="div3">
+                <button id="btn1">Click me</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.querySelector("#div1").addEventListener('click',() => { console.log("div1")}, true); 
+    document.querySelector("#div2").addEventListener('click',() => { console.log("div2")}, true); 
+    document.querySelector("#div3").addEventListener('click',() => { console.log("div3")}, true); 
+    document.querySelector("#btn1").addEventListener('click',() => { console.log("clicked me");event.stopPropagation();}, false); 
+    </script>
+</body>
+</html>
