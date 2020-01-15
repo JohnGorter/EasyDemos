@@ -58,6 +58,8 @@
             }
             render(){
                 return (<div>
+
+                        <Login />
                         <SearchBar onFilter={this.filter}/>
                         <QuestionList questions={this.state.questions} filter={this.state.filter} />
                         <AddQuestion onNew={this.addQuestion} />

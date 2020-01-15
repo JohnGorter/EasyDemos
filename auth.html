@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+
+    <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+        apiKey: "AIzaSyDeExpXdu6KTEbsBA7Uf_E4280D1m7uExc",
+        authDomain: "easylife-90856.firebaseapp.com",
+        databaseURL: "https://easylife-90856.firebaseio.com",
+        projectId: "easylife-90856",
+        storageBucket: "easylife-90856.appspot.com",
+        messagingSenderId: "229425666542",
+        appId: "1:229425666542:web:83fba1a8616565b56396ff"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    </script>
+</head>
+<body>
+    <div id="user"> hello unknown</div>
+    <button id="btnSignIn">SignIn</button>
+    <button id="btnSignOut">SignOut</button>
+
+
+    <form>
+        <dl>
+            <dt>username</dt>
+            <dd><input type="text" id="username"></dd>
+            <dt>Password</dt>
+            <dd><input type="password" id="password"></dd>
+            
+        </dl>
+        <input type="submit" id="btnEmailLogin" value="login" />
+    </form>
+
+    <button id="btnUpload"> Add a row to the database </button>
+
+    <div id="result"></div>
+
+    <script>
+        let admin = false;
+        var provider = new firebase.auth.GoogleAuthProvider();
+
+        firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            console.log("someone is checked in", user);
+        } else {
+            console.log("noone is checked in");
+        }
+        });
+
+        firebase.database().ref('testdata').on('value', (data)=>{
+            let list = Object.values(data.val());
+            document.querySelector("#result").innerHTML = "";
+            list.forEach(l => {
+                document.querySelector("#result").innerHTML += JSON.stringify(l);
+            });
+        });
+
+        document.querySelector("#btnUpload").addEventListener('click', () =>{
+            firebase.database().ref('/testdata').push({testitem:'t'});
+        });
+
+        document.querySelector("#btnEmailLogin").addEventListener('click', () =>{
+            let username = document.querySelector("#username").value;
+            let password = document.querySelector("#password").value;
+            console.log("user", username, password);
+            firebase.auth().signInWithEmailAndPassword(username, password).then(result =>{
+                console.log("user returned", result);
+                document.querySelector("#user").innerHTML = "Hello " + result.user.uid;
+                firebase.database().ref('users/'+result.user.uid+'/admin').on('value', (data) => {
+                    admin = data.val();
+                   
+                });
+            });
+            event.preventDefault();
+        });
+
+        document.querySelector("#btnSignIn").addEventListener('click', () =>{
+          firebase.auth().signInWithPopup(provider).then(function(result) {
+            var token = result.credential.accessToken;        
+            var user = result.user;
+            console.log("user", user);
+            console.log("token", token); 
+            document.querySelector("#user").innerHTML = "Hello " + user.displayName;
+          });
+        });
+
+        document.querySelector("#btnSignOut").addEventListener('click', () =>{
+          firebase.auth().signOut();
+          document.querySelector("#user").innerHTML = "Hello unknown";
+        });
+       
+    </script>
+</body>
+</html>
