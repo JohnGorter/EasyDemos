@@ -7,18 +7,28 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="div1">
-        <div id="div2">
-            <div id="div3">
-                <button id="btn1">Click me</button>
-            </div>
-        </div>
-    </div>
+    <style>
+        :root { --main-color:yellow}
+        h1 { color:red}
+    </style>
+    <h1>Hello welcome to this great site</h1>
+    
+    <john-tag>
+        meork
+    </john-tag>
+
     <script>
-    document.querySelector("#div1").addEventListener('click',() => { console.log("div1")}, true); 
-    document.querySelector("#div2").addEventListener('click',() => { console.log("div2")}, true); 
-    document.querySelector("#div3").addEventListener('click',() => { console.log("div3")}, true); 
-    document.querySelector("#btn1").addEventListener('click',() => { console.log("clicked me");event.stopPropagation();}, false); 
+        class MyJohn extends HTMLElement {
+            
+            connectedCallback() {
+                this.root = this.attachShadow({mode:'open'});
+                this.render(); 
+            }
+            render() {
+                this.root.innerHTML = "<style>h1 { color:var(--main-color, blue)} </style><h1><slot></slot></h1>";
+            }
+        }
+        customElements.define('john-tag', MyJohn); 
     </script>
 </body>
 </html>
