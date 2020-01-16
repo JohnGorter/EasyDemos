@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.1/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.7.2/prop-types.js"></script>
 </head>
 <body>
     <style>
@@ -22,6 +23,9 @@
     <div id="app"></div>
     
     <script type="text/babel">
+
+       let questionlist = {};
+
         class SearchBar extends React.Component {
             state = {checked:false, filter:this.props.filter}
             log = () => { console.log("youve clicked me"); event.preventDefault();}
@@ -44,22 +48,42 @@
             ) 
         }
         let QuestionList = (props) => {
-            let list = [];
-            props.questions.forEach(q => { if (props.filter == '' || q.question.indexOf(props.filter) != -1) list.push(q);});
-            return <div className="questionlist"><div className="questionlisttitle">Questions</div>{list.map(q => <div>{q.q}</div>)}</div> 
+            console.log("rerendering ", props.questions);
+            return <div>{JSON.stringify(props.questions)}</div>
+
+          //  let list = [];
+          //  props.questions.forEach(q => { if (props.filter == '' || q.question.indexOf(props.filter) != -1) list.push(q);});
+          ///  return <div className="questionlist"><div className="questionlisttitle">Questions</div>{list.map(q => <div>{q}</div>)}</div> 
         }   
+        // QuestionList.propTypes = {
+        //     questions: React.PropTypes.isRequired
+        // }
+
+        class QLDataSource extends React.Component {
+            componentDidMount() {  
+               // axios.get(this.props.url).then(q => { console.log("q", q.data); this.props.onLoaded(q.data);})
+               this.props.onLoaded(questionlist);
+            }
+            render = () => <div></div>
+        }
 
         class App extends React.Component {
             constructor(){ super();  this.state = { questions:[], filter:''} }
-            componentDidMount() {  axios.get("http://localhost:3050/questions").then(q => { console.log("q", q.data); this.setState({questions:q.data})});}
             filter = (filterstring) => { this.setState({filter:filterstring}); }
+            onLoaded = (data) => { this.setState({questions:data});}
             addQuestion = (question) => { 
-                axios.post("http://localhost:3050/questions", {q:question, type:'number'}).then(q => {this.setState({questions:Object.values(q.data)})});
+                debugger;
+                questionlist[question] = "some value";
+                console.log("equals", this.state.questionlist === questionlist);
+                this.setState({questionlist:JSON.parse(JSON.stringify(questionlist))});
+               // axios.post("http://localhost:3050/questions", {q:question, type:'number'}).then(q => {this.setState({questions:Object.values(q.data)})});
             }
             render(){
                 return (<div>
+
                         <SearchBar onFilter={this.filter}/>
-                        <QuestionList questions={this.state.questions} filter={this.state.filter} />
+                        <QLDataSource url="http://localhost:3050/questions" onLoaded={this.onLoaded} />
+                        <QuestionList questions={questionlist} filter={this.state.filter} />
                         <AddQuestion onNew={this.addQuestion} />
                     </div>)
             }
