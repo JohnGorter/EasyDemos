@@ -92,10 +92,7 @@
             constructor() {
                 super();
                 this.state = {};
-                store.addSubscriber((context) => {
-                    console.log("refresh");
-                    this.setState(context); 
-                }); 
+                store.addSubscriber((context) => { this.setState(context);  }); 
             }
             render(){
                 return (
