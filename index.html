@@ -24,68 +24,96 @@
     
     <script type="text/babel">
 
-       let questionlist = {};
 
         class SearchBar extends React.Component {
             state = {checked:false, filter:this.props.filter}
             log = () => { console.log("youve clicked me"); event.preventDefault();}
-            render = () => (<div className="searchbar">
-                    <input type="text" onChange={() => {this.setState({filter:event.target.value});}} />
-                 
-                    <a href="#" onClick={this.log}>klik mij om iets te loggen</a>
-                    <button onClick={() => {this.props.onFilter(this.state.filter)}}>Go</button>
-                </div>)
+            render = () => (
+                <AppContext.Consumer>
+                    {(context) => {
+                        return <div className="searchbar">
+                            <input type="text" onChange={() => {this.setState({filter:event.target.value});}} />
+                            <button onClick={() => {context.onFilter(this.state.filter)}}>Go</button>
+                        </div>
+                    }}
+                </AppContext.Consumer>
+                )
         }
-        let AddQuestion = (props) => {
+        let AddQuestion = (_) => {
             return (
-                <form onSubmit={()=>{props.onNew(event.target.q.value);event.preventDefault();}}>
-                    <dl>
-                        <dt>your question</dt>
-                        <dd><input type="text" name="q" placeholder="your question here" required/></dd>
-                    </dl>
-                    <input type="submit" />
-                </form>
+                <AppContext.Consumer>
+                    {(context) => {
+                        return (
+                            <form onSubmit={()=>{context.addQuestion(event.target.q.value);event.preventDefault();}}>
+                                <dl>
+                                    <dt>your question</dt>
+                                    <dd><input type="text" name="q" placeholder="your question here" required/></dd>
+                                </dl>
+                                <input type="submit" />
+                            </form>
+                        )
+                    }}
+                </AppContext.Consumer>
             ) 
         }
-        let QuestionList = (props) => {
-            console.log("rerendering ", props.questions);
-            return <div>{JSON.stringify(props.questions)}</div>
-
-          //  let list = [];
-          //  props.questions.forEach(q => { if (props.filter == '' || q.question.indexOf(props.filter) != -1) list.push(q);});
-          ///  return <div className="questionlist"><div className="questionlisttitle">Questions</div>{list.map(q => <div>{q}</div>)}</div> 
+        let QuestionList = (_) => {
+            return (
+                <AppContext.Consumer>
+                    {(context) => {
+                        console.log("context", context);
+                            let list = [];
+                            context.questions.forEach(q => { if (context.filter == '' || q.indexOf(context.filter) != -1) list.push(q);});
+                            return  <div className="questionlist"><div className="questionlisttitle">Questions</div>{list.map(q => <div>{q}</div>)}</div> }
+                    }
+                </AppContext.Consumer>
+            )
         }   
         // QuestionList.propTypes = {
         //     questions: React.PropTypes.isRequired
         // }
 
-        class QLDataSource extends React.Component {
-            componentDidMount() {  
-               // axios.get(this.props.url).then(q => { console.log("q", q.data); this.props.onLoaded(q.data);})
-               this.props.onLoaded(questionlist);
+        // class QLDataSource extends React.Component {
+        //     componentDidMount() {  
+        //        // axios.get(this.props.url).then(q => { console.log("q", q.data); this.props.onLoaded(q.data);})
+        //        this.props.onLoaded(questionlist);
+        //     }
+        //     render = () => <div></div>
+        // }
+
+        const AppContext = React.createContext()
+
+        class QuestionDataProvider extends React.Component {
+            state =  { 
+                questions:['a','b','c'], 
+                filter:'',
+
+                onFilter: (filterstring) => { this.setState({filter:filterstring}); },
+                onLoaded: (data) => { this.setState({questions:data});},
+                addQuestion: (question) => { 
+                    let questions = this.state.questions;
+                    questions.push(question);
+                    this.setState({questions:JSON.parse(JSON.stringify(questions))});
+                // axios.post("http://localhost:3050/questions", {q:question, type:'number'}).then(q => {this.setState({questions:Object.values(q.data)})});
+                }
+            } 
+            render() {
+                return <AppContext.Provider value={this.state}>
+                {this.props.children}
+                </AppContext.Provider>
             }
-            render = () => <div></div>
         }
 
         class App extends React.Component {
-            constructor(){ super();  this.state = { questions:[], filter:''} }
-            filter = (filterstring) => { this.setState({filter:filterstring}); }
-            onLoaded = (data) => { this.setState({questions:data});}
-            addQuestion = (question) => { 
-                debugger;
-                questionlist[question] = "some value";
-                console.log("equals", this.state.questionlist === questionlist);
-                this.setState({questionlist:JSON.parse(JSON.stringify(questionlist))});
-               // axios.post("http://localhost:3050/questions", {q:question, type:'number'}).then(q => {this.setState({questions:Object.values(q.data)})});
-            }
             render(){
-                return (<div>
-
-                        <SearchBar onFilter={this.filter}/>
-                        <QLDataSource url="http://localhost:3050/questions" onLoaded={this.onLoaded} />
-                        <QuestionList questions={questionlist} filter={this.state.filter} />
-                        <AddQuestion onNew={this.addQuestion} />
-                    </div>)
+                return (
+                    <QuestionDataProvider>
+                        <div>
+                            <SearchBar/>
+                            <QuestionList />
+                            <AddQuestion />
+                        </div>
+                    </QuestionDataProvider>
+                )
             }
         }
 
