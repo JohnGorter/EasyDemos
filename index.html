@@ -10,6 +10,9 @@
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.1/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.7.2/prop-types.js"></script>
+    <script src="https://unpkg.com/react-router-dom/umd/react-router-dom.min.js"></script>
+    <script src="https://unpkg.com/react-router/umd/react-router.min.js"></script>
+
 </head>
 <body>
     <style>
@@ -24,13 +27,14 @@
     
     <script type="text/babel">
 
-        class DataStore {
+class DataStore {
             filter = '';
-            questions = [];
+            questions = ['a','b'];
             subscribers = []; 
            
             onFilter(filterstring) {
                 this.filter= filterstring;
+                console.log('setting the filter to', this.filter); 
                 this.notifyListeners(); 
             }
 
@@ -43,7 +47,9 @@
 
             getQuestions(){
                 let list = [];
+                console.log("filtering on ", this.filter);
                  this.questions.forEach(q => { if (this.filter == '' || q.indexOf(this.filter) != -1) list.push(q);});
+                 console.log("result list", list);
                  return list;
             }
             
@@ -60,18 +66,79 @@
             }
         }
         let store = new DataStore(); 
+ 
+        class JohnHook {
+            John;
+            static hooks = [];
+            static onChange(fn){
+                JohnHook.hooks.push(fn);
+            }
+            static useState(initval) {
+                console.log('creating state');
+                if (!JohnHook.John) { 
+                    JohnHook.John = new John((state) =>{ JohnHook.hooks[0](state)}, initval);
+                }
+                console.log("setting", JohnHook.John.setter);
+                return [JohnHook.John.val, JohnHook.John.setter.bind(JohnHook.John)];
+            }
+        }
+        class HookEngine extends React.Component {
+            constructor(){
+                super();
+                this.state = {};
+                JohnHook.onChange((state)=>{
+                    console.log("HOOK REFRESH");
+                    this.setState({state:state});
+                })
+            }
+            render() {
+                return this.props.children;
+            }
+        }
 
+        class John extends React.Component {
 
-        class SearchBar extends React.Component {
-            state = {checked:false, filter:this.props.filter}
-            log = () => { console.log("youve clicked me"); event.preventDefault();}
-            render = () => (
+            constructor(onchange, initval) {
+                super();
+                this.onchange = onchange;
+                this._val = initval;
+            }
+            get val(){
+                console.log("inside the getter");
+                return this._val;
+            }
+
+             setter = (newval) => {
+                console.log("inside the setter", this);
+                this._val = newval;
+                this.onchange(this._val);
+                console.log("after the setter", this._val);
+            }
+            render(){ return <div>{this.props.children}</div>}
+        }
+
+        let SearchBar = (props) => {
+            const [searchState, setSearchState] = React.useState(store.filter);
+            console.log("current state", searchState); 
+            return (
                 <div className="searchbar">
-                    <input type="text" onChange={() => {this.setState({filter:event.target.value});}} />
-                    <button onClick={() => {store.onFilter(this.state.filter)}}>Go</button>
+                    <input type="text" onChange={() => {setSearchState(event.target.value);}} />
+                    <button onClick={() => {store.onFilter(searchState)}}>Go</button>
                 </div>
             )
         }
+
+        // class SearchBar extends React.Component {
+        //     state = {checked:false, filter:this.props.filter}
+        //     log = () => { console.log("youve clicked me"); event.preventDefault();}
+        //     render = () => (
+        //         <div className="searchbar">
+        //             <input type="text" onChange={() => {this.setState({filter:event.target.value});}} />
+        //             <button onClick={() => {store.onFilter(this.state.filter)}}>Go</button>
+        //         </div>
+        //     )
+        // }
+
         let AddQuestion = (_) => {
              return (
                 <form onSubmit={()=>{store.addQuestion(event.target.q.value);event.preventDefault();}}>
@@ -84,23 +151,55 @@
              )
         }
 
-        let QuestionList = (_) => {
-            return  <div className="questionlist"><div className="questionlisttitle">Questions</div>{store.questions.map(q => <div>{q}</div>)}</div> 
-        }   
+        let QuestionDetail = (props) => { 
+            let question = store.getQuestions()[props.match.params.q];
+            return (
+                <div>
+                    <div>{question}</div>
+                    <div onClick={()=>{ props.history.push('/') }}>Back to the list</div>
+                </div>
+            )
+        }
 
+        let QuestionList = (_) => {
+            return  <div className="questionlist"><div className="questionlisttitle">Questions</div>{store.getQuestions().map((q,i) => <ReactRouterDOM.Link to={"/question/" + i} >{q}</ReactRouterDOM.Link>)}</div> 
+        }   
+        class Main extends React.Component {
+            constructor(){
+                super(); 
+                this.state = { loggedin:false};
+            }
+            render() { 
+                if (this.state.loggedin)
+                    return (
+                        <div>
+                            <header>Quiz</header>
+                            <ReactRouterDOM.Switch>
+                                <ReactRouterDOM.Route exact path='/' component={QuestionList}/>
+                                <ReactRouterDOM.Route path='/question/:q' component={QuestionDetail}/>
+                            </ReactRouterDOM.Switch>
+                        </div>
+                    ) 
+                else return (
+                        <div onClick={() => this.setState({loggedin:true})}>LOGIN</div>
+                )
+            } 
+        }
+        
         class App extends React.Component {
             constructor() {
                 super();
                 this.state = {};
-                store.addSubscriber((context) => { this.setState(context);  }); 
+                store.addSubscriber((context) => { 
+                    console.log("refreshing...");
+                    this.setState(context);  
+                }); 
             }
             render(){
                 return (
-                        <div>
-                            <SearchBar/>
-                            <QuestionList />
-                            <AddQuestion />
-                        </div>
+                    <ReactRouterDOM.BrowserRouter>
+                        <Main />
+                    </ReactRouterDOM.BrowserRouter>
                 )
             }
         }
